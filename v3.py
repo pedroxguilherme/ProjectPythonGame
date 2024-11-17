@@ -1,209 +1,181 @@
-import tkinter as tk
-import random
-from tkinter import messagebox
 import pygame
-import numpy as np
+from random import randrange
+import time
 
-pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+# Inicializando o mixer de áudio do pygame
+pygame.mixer.init()
 
-def generate_tone(frequency, duration=0.5, sample_rate=44100):
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-    wave = 32767 * np.sin(2 * np.pi * frequency * t)
-    wave = wave.astype(np.int16)
-    stereo_wave = np.zeros((wave.size, 2), dtype=np.int16)
-    stereo_wave[:, 0] = wave
-    stereo_wave[:, 1] = wave
-    sound = pygame.sndarray.make_sound(stereo_wave)
-    return sound
+# Carregando os sons
+game_start = pygame.mixer.Sound('./sound/game_start.wav')
+game_over = pygame.mixer.Sound('./sound/game_over.wav')
+blue_sound = pygame.mixer.Sound('./sound/blue_sound.mp3')
+red_sound = pygame.mixer.Sound('./sound/red_sound.wav')
+green_sound = pygame.mixer.Sound('./sound/green_sound.wav')
+yellow_sound = pygame.mixer.Sound('./sound/yellow_sound.wav')
 
-SOUNDS = {
-    'red': generate_tone(440),
-    'green': generate_tone(550),
-    'blue': generate_tone(660),
-    'yellow': generate_tone(770)
-}
+# Cores do Jogo
+preto = (0, 0, 0)
+cinza = (100, 100, 100)
+branco = (255, 255, 255)
+vermelho = (255, 100, 100)
+vermelho_escuro = (200, 0, 0)
+amarelo = (255, 255, 150)
+amarelo_escuro = (255, 255, 0)
+verde = (100, 255, 100)
+verde_escuro = (0, 200, 0)
+azul = (150, 150, 255)
+azul_escuro = (0, 0, 255)
 
-COLORS = ['red', 'green', 'blue', 'yellow']
-GAME_SPEED = 1000
-LEVEL_INCREMENT = 100
-MAX_SPEED = 300
-current_sequence = []
-user_sequence = []
-scores = {1: 0, 2: 0}
-lives = {1: 3, 2: 3}
+# Setup da tela do Jogo
+window = pygame.display.set_mode((600, 600))
+window.fill(branco)
+pygame.display.set_caption("Brilliant Melody - Multiplayer")
 
-class BrilliantMelody:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Brilliant Melody")
-        self.root.geometry("800x600")
-        self.root.configure(bg="#2e2e2e")
+# Inicializando fonte
+pygame.font.init()
+fonte = pygame.font.SysFont("Comic Sans MS", 30)
 
-        self.is_player_turn = False
-        self.level = 1
-        self.game_speed = GAME_SPEED
-        self.single_player = True
-        self.player_turn = 1
-        self.buttons = {}
-        self.create_menu_screen()
-        
-    def create_menu_screen(self):
-        self.menu_frame = tk.Frame(self.root, bg="#2e2e2e")
-        self.menu_frame.place(relwidth=1, relheight=1)
+# Variáveis do Jogo
+click_on_off = 0
+sequencia_do_jogo = []
+resposta = []
+jogador_atual = 1  # Alterna entre 1 e 2
+vidas = {1: 3, 2: 3}
+repeticao_das_cores = 0
+em_execucao = True  # Controla a execução da sequência de jogo
+jogador_esperando_resposta = {1: False, 2: False}  # Indica se o jogador está esperando para dar resposta
 
-        tk.Label(self.menu_frame, text="Brilliant Melody", font=('Helvetica', 36), bg="#2e2e2e", fg="white").pack(pady=80)
-        
-        single_btn = tk.Button(self.menu_frame, text="Single Player", command=lambda: self.start_game(True), font=('Helvetica', 16), width=15, bg="#1f6f8b", fg="white")
-        single_btn.pack(pady=10)
 
-        multi_btn = tk.Button(self.menu_frame, text="Multiplayer", command=lambda: self.start_game(False), font=('Helvetica', 16), width=15, bg="#1f6f8b", fg="white")
-        multi_btn.pack(pady=10)
+def exibir_status():
+    """Exibe as vidas e o jogador atual na tela."""
+    pygame.draw.rect(window, branco, (0, 0, 600, 50))
+    texto = fonte.render(
+        f"Jogador {jogador_atual} | Vidas: J1-{vidas[1]} J2-{vidas[2]}", 1, preto
+    )
+    window.blit(texto, (10, 10))
+    pygame.display.update()
 
-        exit_btn = tk.Button(self.menu_frame, text="Sair", command=self.root.quit, font=('Helvetica', 16), width=15, bg="#1f6f8b", fg="white")
-        exit_btn.pack(pady=10)
 
-    def start_game(self, single_player):
-        self.single_player = single_player
-        self.menu_frame.destroy()
-        self.setup_game_screen()
+# Funções para o layout do jogo
+def inicio(window):
+    pygame.draw.rect(window, verde_escuro, (100, 100, 200, 200))
+    pygame.draw.rect(window, vermelho_escuro, (300, 100, 200, 200))
+    pygame.draw.rect(window, amarelo_escuro, (100, 300, 200, 200))
+    pygame.draw.rect(window, azul_escuro, (300, 300, 200, 200))
+    pygame.draw.rect(window, preto, (100, 300, 400, 10))
+    pygame.draw.rect(window, preto, (300, 100, 10, 400))
+    pygame.draw.circle(window, branco, (300, 300), 300, 100)
+    pygame.draw.circle(window, preto, (300, 300), 90)
+    pygame.draw.circle(window, preto, (300, 300), 210, 10)
+    texto = fonte.render("Brilliant", 1, branco)
+    window.blit(texto, (260, 275))
+    exibir_status()
 
-    def setup_game_screen(self):
-        self.create_scoreboard()
-        self.create_buttons()
-        self.reset_game()
-        self.next_round()
 
-    def create_buttons(self):
-        button_frame = tk.Frame(self.root, bg="#2e2e2e")
-        button_frame.pack(pady=20)
+# Funções de destaque para botões
+def destacar_cor(cor, window):
+    cores = [verde_escuro, vermelho_escuro, amarelo_escuro, azul_escuro]
+    if cor != -1:
+        cores[cor] = [verde, vermelho, amarelo, azul][cor]
+    pygame.draw.rect(window, cores[0], (100, 100, 200, 200))
+    pygame.draw.rect(window, cores[1], (300, 100, 200, 200))
+    pygame.draw.rect(window, cores[2], (100, 300, 200, 200))
+    pygame.draw.rect(window, cores[3], (300, 300, 200, 200))
+    pygame.draw.rect(window, preto, (100, 300, 400, 10))
+    pygame.draw.rect(window, preto, (300, 100, 10, 400))
+    pygame.draw.circle(window, branco, (300, 300), 300, 100)
+    pygame.draw.circle(window, preto, (300, 300), 90)
+    pygame.draw.circle(window, preto, (300, 300), 210, 10)
+    texto = fonte.render("Melody", 1, branco)
+    window.blit(texto, (260, 275))
+    exibir_status()
 
-        button_width = 15
-        button_height = 8
-        for i, color in enumerate(COLORS):
-            button = tk.Button(button_frame, bg=color, width=button_width, height=button_height,
-                               command=lambda c=color: self.handle_click(c), activebackground=color, relief="flat")
-            button.grid(row=0 if i < 2 else 1, column=i % 2, padx=10, pady=10, ipadx=10, ipady=10)
-            self.buttons[color] = button
 
-    def create_scoreboard(self):
-        score_frame = tk.Frame(self.root, bg="#2e2e2e")
-        score_frame.pack(side=tk.TOP, fill=tk.X, pady=10)
+# Lógica do jogo
+def alternar_jogador():
+    """Alterna para o próximo jogador."""    
+    global jogador_atual
+    jogador_atual = 2 if jogador_atual == 1 else 1
 
-        # Placar para Single Player
-        if self.single_player:
-            self.score_label1 = tk.Label(score_frame, text="Pontos: 0", font=('Helvetica', 14), bg="#2e2e2e", fg="white")
-            self.score_label1.pack(side=tk.LEFT, padx=20)
 
-            self.status_label = tk.Label(self.root, text="Vidas: 3", font=('Helvetica', 12), bg="#2e2e2e", fg="white")
-            self.status_label.pack(pady=5)
+def fim_de_jogo(vencedor):
+    """Exibe o vencedor e reinicia o jogo."""
+    game_over.play()
+    pygame.draw.rect(window, branco, (0, 0, 600, 50))
+    texto = fonte.render(f"Jogador {vencedor} venceu!", 1, vermelho)
+    window.blit(texto, (150, 250))
+    pygame.display.update()
+    time.sleep(3)
+    vidas[1], vidas[2] = 3, 3
+    sequencia_do_jogo.clear()
+    resposta.clear()
+    alternar_jogador()
+    global em_execucao
+    em_execucao = True  # Reinicia a execução do jogo após a vitória
 
-        # Placar para Multiplayer com destaque no jogador ativo
-        else:
-            self.score_label1 = tk.Label(score_frame, text="Jogador 1: 0", font=('Helvetica', 14), bg="#2e2e2e", fg="white")
-            self.score_label1.pack(side=tk.LEFT, padx=20)
 
-            self.score_label2 = tk.Label(score_frame, text="Jogador 2: 0", font=('Helvetica', 14), bg="#2e2e2e", fg="white")
-            self.score_label2.pack(side=tk.RIGHT, padx=20)
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
 
-            self.status_label = tk.Label(self.root, text="Vidas - Jogador 1: 3 | Jogador 2: 3", font=('Helvetica', 12), bg="#2e2e2e", fg="white")
-            self.status_label.pack(pady=5)
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
 
-    def next_round(self):
-        self.is_player_turn = False
-        user_sequence.clear()
-        self.add_to_sequence()
-        self.show_sequence(0)
+    if repeticao_das_cores:
+        inicio(window)
+        time.sleep(0.5)
+        for cor in sequencia_do_jogo:
+            destacar_cor(cor, window)
+            [green_sound, red_sound, yellow_sound, blue_sound][cor].play()
+            time.sleep(0.5)
+            inicio(window)
+            time.sleep(0.5)
+        repeticao_das_cores = 0
 
-    def reset_game(self):
-        global current_sequence, scores, lives
-        current_sequence = []
-        scores = {1: 0, 2: 0}
-        lives = {1: 3, 2: 3}
-        self.update_score_labels()
-        self.level = 1
-        self.game_speed = GAME_SPEED
-        self.player_turn = 1
+    if em_execucao:  # Inicia a sequência apenas quando o jogo estiver em execução
+        if resposta == sequencia_do_jogo and sequencia_do_jogo:
+            repeticao_das_cores = 1
+            resposta.clear()
+            sequencia_do_jogo.append(randrange(4))
+            jogador_esperando_resposta[jogador_atual] = False
+        elif len(resposta) > 0 and resposta[-1] != sequencia_do_jogo[len(resposta) - 1]:
+            vidas[jogador_atual] -= 1
+            if vidas[jogador_atual] == 0:
+                fim_de_jogo(2 if jogador_atual == 1 else 1)
+            resposta.clear()
+            jogador_esperando_resposta[jogador_atual] = False
+            alternar_jogador()
 
-    def add_to_sequence(self):
-        current_sequence.append(random.choice(COLORS))
-        
-    def show_sequence(self, index):
-        if index < len(current_sequence):
-            color = current_sequence[index]
-            self.buttons[color].config(bg="white")
-            self.play_sound(color)
-            self.root.after(500, lambda: self.hide_button(color, index))
-        else:
-            self.is_player_turn = True
-            self.status_label.config(text="Sua vez!" if self.single_player else f"Turno do Jogador {self.player_turn}")
+    # Clique no botão central para começar
+    if (mouse[0] - 300) ** 2 + (mouse[1] - 300) ** 2 <= 6400:  # Dentro do círculo
+        destacar_cor(-1, window)  # Não altera cor
+        if click[0] == 1 and click_on_off == 0:  # Clica uma vez
+            game_start.play()
+            repeticao_das_cores = 1
+            sequencia_do_jogo.append(randrange(4))
+            resposta.clear()
+            jogador_esperando_resposta[jogador_atual] = True
 
-    def hide_button(self, color, index):
-        self.buttons[color].config(bg=color)
-        self.root.after(500, lambda: self.show_sequence(index + 1))
+    # Verificando cliques nas áreas das cores
+    if jogador_esperando_resposta[jogador_atual]:
+        if click[0] == 1 and click_on_off == 0:  # Apenas quando o clique é válido
+            click_on_off = 1
+            if 0 <= mouse[0] <= 200 and 0 <= mouse[1] <= 200:
+                resposta.append(0)
+                green_sound.play()
+            elif 200 <= mouse[0] <= 400 and 0 <= mouse[1] <= 200:
+                resposta.append(1)
+                red_sound.play()
+            elif 0 <= mouse[0] <= 200 and 200 <= mouse[1] <= 400:
+                resposta.append(2)
+                yellow_sound.play()
+            elif 200 <= mouse[0] <= 400 and 200 <= mouse[1] <= 400:
+                resposta.append(3)
+                blue_sound.play()
 
-    def handle_click(self, color):
-        if not self.is_player_turn:
-            return
-        user_sequence.append(color)
-        
-        if user_sequence[-1] != current_sequence[len(user_sequence) - 1]:
-            self.player_failed()
-        elif len(user_sequence) == len(current_sequence):
-            self.round_complete()
-        
-        self.animate_button(color)
-        self.play_sound(color)
+    if click[0] == 0:
+        click_on_off = 0
 
-    def animate_button(self, color):
-        self.buttons[color].config(bg="white")
-        self.root.after(100, lambda: self.buttons[color].config(bg=color))
-
-    def round_complete(self):
-        if self.single_player:
-            scores[1] += 1
-            self.update_score_labels()
-            self.level += 1
-            self.game_speed = max(1000 - (self.level - 1) * LEVEL_INCREMENT, MAX_SPEED)
-            user_sequence.clear()
-            self.root.after(1000, self.next_round)
-        else:
-            self.multiplayer_round_complete()
-
-    def multiplayer_round_complete(self):
-        scores[self.player_turn] += 1
-        self.update_score_labels()
-        self.player_turn = 2 if self.player_turn == 1 else 1
-        self.status_label.config(text=f"Turno do Jogador {self.player_turn}")
-        user_sequence.clear()
-        self.root.after(1000, self.next_round)
-
-    def player_failed(self):
-        lives[self.player_turn] -= 1
-        if lives[self.player_turn] == 0:
-            winner = "Jogador 2" if self.player_turn == 1 else "Jogador 1"
-            messagebox.showinfo("Fim de Jogo", f"{winner} venceu!")
-            self.reset_game()
-            self.create_menu_screen()
-        else:
-            messagebox.showinfo("Erro", f"Você errou! Vidas restantes: {lives[self.player_turn]}")
-            self.player_turn = 2 if self.player_turn == 1 else 1
-            user_sequence.clear()
-            self.next_round()
-
-    def update_score_labels(self):
-        if self.single_player:
-            self.score_label1.config(text=f"Pontos: {scores[1]}")
-            self.status_label.config(text=f"Vidas: {lives[1]}")
-        else:
-            self.score_label1.config(text=f"Jogador 1: {scores[1]}")
-            self.score_label2.config(text=f"Jogador 2: {scores[2]}")
-            self.status_label.config(text=f"Vidas - Jogador 1: {lives[1]} | Jogador 2: {lives[2]}")
-
-    def play_sound(self, color):
-        sound = SOUNDS.get(color)
-        if sound:
-            sound.play()
-
-root = tk.Tk()
-game = BrilliantMelody(root)
-root.mainloop()
+    pygame.display.update()
