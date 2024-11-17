@@ -30,7 +30,7 @@ azul_escuro = (0, 0, 255)
 # Setup da tela do Jogo
 window = pygame.display.set_mode((600, 600))
 window.fill(branco)
-pygame.display.set_caption("Simon Disse!")
+pygame.display.set_caption("Brilliant Disse!")
 
 # Inicializando fonte
 pygame.font.init()
@@ -53,7 +53,7 @@ def inicio(window):
     pygame.draw.circle(window, branco, (300, 300), 300, 100)
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Brilliant", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
@@ -67,7 +67,7 @@ def b_verde(window):
     pygame.draw.circle(window, branco, (300, 300), 300, 100)
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Melody", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
@@ -81,7 +81,7 @@ def b_vermelho(window):
     pygame.draw.circle(window, branco, (300, 300), 300, 100)
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Melody", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
@@ -95,7 +95,7 @@ def b_amarelo(window):
     pygame.draw.circle(window, branco, (300, 300), 300, 100)
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Melody", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
@@ -109,7 +109,7 @@ def b_azul(window):
     pygame.draw.circle(window, branco, (300, 300), 300, 100)
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Melody", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
@@ -124,7 +124,7 @@ def b_centro(window):
     pygame.draw.circle(window, preto, (300, 300), 90)
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
     pygame.draw.circle(window, cinza, (300, 300), 80)
-    texto = fonte.render("Simon", 1, branco)
+    texto = fonte.render("Melody", 1, branco)
     window.blit(texto, (260, 275))
     pygame.display.update()
 
