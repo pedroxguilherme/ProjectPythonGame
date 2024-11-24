@@ -232,8 +232,7 @@ def menu():
         # Desenhar os botões com animação
         draw_button("Iniciar Solo", 200, 200, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
         draw_button("Exibir Rank", 200, 270, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
-        draw_button("Opções", 200, 340, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
-        draw_button("Sair", 200, 410, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
+        draw_button("Sair", 200, 340, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
 
         # Verificar eventos
         for event in pygame.event.get():
@@ -253,12 +252,8 @@ def menu():
                 elif 200 <= mouse_x <= 400 and 270 <= mouse_y <= 320:
                     exibir_ranking()  # Exibe o ranking
 
-                # Verificar se o botão "Opções" foi clicado
-                elif 200 <= mouse_x <= 400 and 340 <= mouse_y <= 390:
-                    options()  # Exibe opções
-
                # Verificar se o botão "Sair" foi clicado
-                elif 200 <= mouse_x <= 400 and 410 <= mouse_y <= 460:
+                elif 200 <= mouse_x <= 400 and 340 <= mouse_y <= 460:
                     pygame.quit()
                     sys.exit()
 
