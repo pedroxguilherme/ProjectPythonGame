@@ -2,9 +2,101 @@ import pygame
 from random import randrange
 import time
 from tkinter import Tk, Button
+import json
+import os
+import tkinter as tk
+import tkinter.simpledialog
+
+# Inicializando o tkinter
+root = Tk()
+root.withdraw()  # Esconde a janela principal do tkinter
 
 # Inicializando o mixer de áudio do pygame
 pygame.mixer.init()
+
+# Nome do arquivo para salvar o ranking
+RANKING_FILE = "ranking.json"
+
+# Funções de ranking
+def carregar_ranking():
+    """Carrega o ranking do arquivo JSON. Inicializa se o arquivo estiver vazio ou inválido."""
+    if not os.path.exists(RANKING_FILE):
+        with open(RANKING_FILE, "w") as file:
+            json.dump([], file)  # Inicializa com uma lista vazia
+    try:
+        with open(RANKING_FILE, "r") as file:
+            return json.load(file)
+    except json.JSONDecodeError:
+        # Se o JSON estiver inválido, reescreve com uma lista vazia
+        with open(RANKING_FILE, "w") as file:
+            json.dump([], file)
+        return []
+
+def salvar_ranking(nome, pontuacao):
+    """Salva a pontuação de um jogador no ranking."""
+    ranking = carregar_ranking()
+    ranking.append({"nome": nome, "pontuacao": pontuacao})
+    ranking.sort(key=lambda x: x["pontuacao"], reverse=True)
+    with open(RANKING_FILE, "w") as file:
+        json.dump(ranking, file, indent=4)
+    
+
+def exibir_ranking():
+    """Exibe o ranking em uma nova janela."""
+    ranking = carregar_ranking()
+    janela_ranking = tk.Toplevel(root)
+    janela_ranking.title("Ranking")
+    tk.Label(janela_ranking, text="=== RANKING ===", font=("Arial", 16)).pack(pady=10)
+    for i, entrada in enumerate(ranking[:10], 1):  # Top 10
+        tk.Label(janela_ranking, text=f"{i}. {entrada['nome']} - {entrada['pontuacao']} pontos").pack()
+    tk.Button(janela_ranking, text="Fechar", command=janela_ranking.destroy).pack(pady=10)
+
+from tkinter.simpledialog import askstring  # Certifique-se de importar assim
+
+import tkinter as tk
+from tkinter.simpledialog import askstring
+import json
+
+def finalizar_jogo(score):
+    # Janela para registrar o nome do jogador
+    janela_game_over = tk.Tk()
+    janela_game_over.title("Game Over")
+    janela_game_over.geometry("300x200")
+
+    # Exibe a mensagem de fim de jogo
+    tk.Label(
+        janela_game_over, text=f"Fim de Jogo! Pontuação Final: {score}", font=("Arial", 14)
+    ).pack(pady=10)
+
+    # Captura o nome do jogador
+    nome = askstring("Registro de Nome", "Digite seu nome:", parent=janela_game_over)
+
+    # Processa o nome e a pontuação, salva no arquivo
+    if nome:
+        try:
+            # Tenta carregar o ranking existente
+            with open("ranking.json", "r") as arquivo:
+                ranking = json.load(arquivo)
+                if not isinstance(ranking, dict):
+                    ranking = {}
+        except FileNotFoundError:
+            ranking = {}
+
+        # Adiciona a pontuação do jogador
+        ranking[nome] = score
+        with open("ranking.json", "w") as arquivo:
+            json.dump(ranking, arquivo, indent=4)
+
+    # Fecha a janela após o nome ser inserido
+    janela_game_over.destroy()
+
+    # Exibe uma mensagem para o jogador sobre o fim do jogo e reinício
+    tk.messagebox.showinfo("Fim de Jogo", "Clique para reiniciar o jogo!")
+    reiniciar_jogo()  # Chame a função que reinicia o jogo, se necessário
+
+# Função para reiniciar o jogo (substitua com a lógica real)
+def reiniciar_jogo():
+    print("Reiniciando o jogo...")  # Aqui você pode colocar o código para reiniciar o jogo
 
 # Carregando o som
 game_start = pygame.mixer.Sound('./sound/game_start.wav')
@@ -172,17 +264,16 @@ while True:
         sequencia_do_jogo.append(randrange(4))
         resposta = []
     if len(resposta) > 0 and \
-       len(sequencia_do_jogo) > 0 and \
-       resposta[len(resposta) - 1] != sequencia_do_jogo[len(resposta) - 1] and \
-       sequencia_do_jogo != []:
-        game_over.play()
-        pygame.draw.rect(window, branco, (0, 0, 500, 50))
-        texto = fonte.render('Fim de Jogo - Você fez ' + str(len(sequencia_do_jogo) - 1) + ' pontos', 1, vermelho_escuro)
-        window.blit(texto, (10, 10))
-        pygame.display.update()
-        time.sleep(3)
-        sequencia_do_jogo = []
-        resposta = []
+      len(sequencia_do_jogo) > 0 and \
+     resposta[len(resposta) - 1] != sequencia_do_jogo[len(resposta) - 1] and \
+     sequencia_do_jogo != []:
+     game_over.play()
+     score = len(sequencia_do_jogo) - 1
+     pygame.display.update()
+     finalizar_jogo(score)  # Chama a função finalizar_jogo
+     sequencia_do_jogo = []
+     resposta = []
+ 
 
     # Verde
     if (mouse[0] - 300) ** 2 + (mouse[1] - 300) ** 2 <= 40000 and \
@@ -238,3 +329,5 @@ while True:
     click_on_off = click[0]
 
     pygame.display.update()
+
+

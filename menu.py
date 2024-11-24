@@ -3,6 +3,8 @@ import sys
 import random
 from pygame.locals import QUIT
 import itertools
+import tkinter as tk
+import json
 import subprocess  # Para rodar o jogo como um subprocesso
 
 # Inicialização do Pygame
@@ -38,6 +40,60 @@ color_change_speed = 0.2  # Velocidade de transição lenta
 color_stages = [(0, 0, 0)]  # Azul, vermelho, preto
 current_stage = 0  # Índice da cor inicial
 
+
+def exibir_ranking():
+    try:
+        with open("ranking.json", "r") as arquivo:
+            ranking = json.load(arquivo)  # Carrega o conteúdo JSON
+    except FileNotFoundError:
+        ranking = {"mensagem": "Nenhum ranking disponível."}  # Caso o arquivo não exista
+
+    # Criar a janela do ranking
+    janela_ranking = tk.Tk()
+    janela_ranking.title("Ranking")
+    janela_ranking.geometry("400x400")
+    janela_ranking.config(bg="black")  # Fundo preto
+
+    # Título do Ranking
+    titulo = tk.Label(janela_ranking, text="Ranking", font=("Arial", 20), fg="white", bg="black")
+    titulo.pack(pady=10)
+
+    # Exibir os dados do ranking
+    texto = tk.Text(janela_ranking, wrap=tk.WORD, font=("Arial", 12), bg="black", fg="white", bd=0, height=15)
+    texto.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+
+    # Verifica se o ranking é um dicionário com a chave ""
+    if isinstance(ranking, dict):
+        for chave, valor in ranking.items():
+            texto.insert(tk.END, f"{chave}: {valor} pontos\n")
+    else:
+        texto.insert(tk.END, "Formato desconhecido no ranking.json")
+
+    # Botão para fechar a janela
+    tk.Button(janela_ranking, text="Fechar", command=janela_ranking.destroy, font=("Arial", 12), fg="black", bg="white").pack(pady=10)
+
+
+    # Exibir os dados do ranking
+    texto = tk.Text(janela_ranking, wrap=tk.WORD, font=("Arial", 12), bg="black", fg="white", bd=0, height=15)
+    texto.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+
+    # Se o ranking for um dicionário com uma mensagem
+    if isinstance(ranking, dict) and "mensagem" in ranking:
+        texto.insert(tk.END, ranking["mensagem"] + "\n")
+    elif isinstance(ranking, list):
+        # Adicionar a colocação e a pontuação
+        for idx, item in enumerate(ranking):
+            nome = item.get("nome", "Jogador desconhecido")
+            score = item.get("score", 0)
+            texto.insert(tk.END, f"{idx + 1}. {nome} - {score} pontos\n")
+    else:
+        texto.insert(tk.END, "Formato desconhecido no ranking.json")
+
+    # Botão para fechar a janela
+    tk.Button(janela_ranking, text="Fechar", command=janela_ranking.destroy, font=("Arial", 12), fg="black", bg="white").pack(pady=10)
+
+    janela_ranking.mainloop()
+    
 # Função para desenhar o fundo animado com degradê entre azul, vermelho e preto
 def draw_animated_background():
     global current_stage, background_color
@@ -164,6 +220,7 @@ def start_game(multiplayer=False):
     # Aqui, chame o seu arquivo V4.py com um argumento de multiplayer
     # Substitua 'V4.py' pelo caminho correto do seu arquivo
     subprocess.run(['python', 'V4.py', 'multiplayer' if multiplayer else 'singleplayer'])  # Ajuste o nome do arquivo
+    
 
 # Função para o menu
 def menu():
@@ -174,7 +231,7 @@ def menu():
 
         # Desenhar os botões com animação
         draw_button("Iniciar Solo", 200, 200, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
-        draw_button("Iniciar Multiplayer", 200, 270, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
+        draw_button("Exibir Rank", 200, 270, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
         draw_button("Opções", 200, 340, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
         draw_button("Sair", 200, 410, BUTTON_WIDTH, BUTTON_HEIGHT, BLACK, WHITE)
 
@@ -192,20 +249,22 @@ def menu():
                     running = False  # Fecha o menu e inicia o jogo
                     start_game(multiplayer=False)  # Inicia o modo Singleplayer
 
-                # Verificar se o botão "Iniciar Multiplayer" foi clicado
+                # Verificar se o botão foi clicado
                 elif 200 <= mouse_x <= 400 and 270 <= mouse_y <= 320:
-                    running = False
-                    start_game(multiplayer=True)  # Inicia o modo Multiplayer
+                    exibir_ranking()  # Exibe o ranking
 
                 # Verificar se o botão "Opções" foi clicado
                 elif 200 <= mouse_x <= 400 and 340 <= mouse_y <= 390:
                     options()  # Exibe opções
 
-                # Verificar se o botão "Sair" foi clicado
+               # Verificar se o botão "Sair" foi clicado
                 elif 200 <= mouse_x <= 400 and 410 <= mouse_y <= 460:
-                    running = False  # Sai do jogo
+                    pygame.quit()
+                    sys.exit()
+
 
         pygame.display.update()
 
-# Chama o menu para começar
-menu()
+# Função principal para rodar o menu
+if __name__ == "__main__":
+    menu()

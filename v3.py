@@ -40,18 +40,16 @@ click_on_off = 0
 sequencia_do_jogo = []
 resposta = []
 jogador_atual = 1  # Alterna entre 1 e 2
-vidas = {1: 3, 2: 3}
 repeticao_das_cores = 0
-em_execucao = True  # Controla a execução da sequência de jogo
+em_execucao = False  # Controle de quando o jogo realmente começa
 jogador_esperando_resposta = {1: False, 2: False}  # Indica se o jogador está esperando para dar resposta
+jogador_erro = None  # Controla quem errou
 
 
 def exibir_status():
-    """Exibe as vidas e o jogador atual na tela."""
+    """Exibe o jogador atual na tela."""
     pygame.draw.rect(window, branco, (0, 0, 600, 50))
-    texto = fonte.render(
-        f"Jogador {jogador_atual} | Vidas: J1-{vidas[1]} J2-{vidas[2]}", 1, preto
-    )
+    texto = fonte.render(f"Jogador {jogador_atual}", 1, preto)
     window.blit(texto, (10, 10))
     pygame.display.update()
 
@@ -93,7 +91,7 @@ def destacar_cor(cor, window):
 
 # Lógica do jogo
 def alternar_jogador():
-    """Alterna para o próximo jogador."""    
+    """Alterna para o próximo jogador."""
     global jogador_atual
     jogador_atual = 2 if jogador_atual == 1 else 1
 
@@ -106,12 +104,23 @@ def fim_de_jogo(vencedor):
     window.blit(texto, (150, 250))
     pygame.display.update()
     time.sleep(3)
-    vidas[1], vidas[2] = 3, 3
     sequencia_do_jogo.clear()
     resposta.clear()
     alternar_jogador()
     global em_execucao
-    em_execucao = True  # Reinicia a execução do jogo após a vitória
+    em_execucao = False  # Fim do jogo
+
+
+def atualizar_jogo():
+    """Atualiza o estado do jogo."""
+    global repeticao_das_cores
+    if resposta == sequencia_do_jogo:
+        repeticao_das_cores = 1
+        resposta.clear()
+        sequencia_do_jogo.append(randrange(4))
+        jogador_esperando_resposta[jogador_atual] = False
+    elif len(resposta) > 0 and resposta[-1] != sequencia_do_jogo[len(resposta) - 1]:
+        fim_de_jogo(2 if jogador_atual == 1 else 1)
 
 
 while True:
@@ -133,47 +142,37 @@ while True:
             inicio(window)
             time.sleep(0.5)
         repeticao_das_cores = 0
+        jogador_esperando_resposta[jogador_atual] = True  # Habilita a espera pela resposta após a repetição das cores
 
-    if em_execucao:  # Inicia a sequência apenas quando o jogo estiver em execução
-        if resposta == sequencia_do_jogo and sequencia_do_jogo:
-            repeticao_das_cores = 1
-            resposta.clear()
-            sequencia_do_jogo.append(randrange(4))
-            jogador_esperando_resposta[jogador_atual] = False
-        elif len(resposta) > 0 and resposta[-1] != sequencia_do_jogo[len(resposta) - 1]:
-            vidas[jogador_atual] -= 1
-            if vidas[jogador_atual] == 0:
-                fim_de_jogo(2 if jogador_atual == 1 else 1)
-            resposta.clear()
-            jogador_esperando_resposta[jogador_atual] = False
-            alternar_jogador()
+    if em_execucao:  # O jogo começa quando o jogador clica para iniciar
+        atualizar_jogo()
 
     # Clique no botão central para começar
-    if (mouse[0] - 300) ** 2 + (mouse[1] - 300) ** 2 <= 6400:  # Dentro do círculo
+    if not em_execucao and (mouse[0] - 300) ** 2 + (mouse[1] - 300) ** 2 <= 6400:  # Dentro do círculo
         destacar_cor(-1, window)  # Não altera cor
         if click[0] == 1 and click_on_off == 0:  # Clica uma vez
             game_start.play()
             repeticao_das_cores = 1
             sequencia_do_jogo.append(randrange(4))
             resposta.clear()
-            jogador_esperando_resposta[jogador_atual] = True
+            jogador_esperando_resposta[jogador_atual] = False
+            em_execucao = True  # O jogo começa de fato aqui
 
     # Verificando cliques nas áreas das cores
-    if jogador_esperando_resposta[jogador_atual]:
-        if click[0] == 1 and click_on_off == 0:  # Apenas quando o clique é válido
-            click_on_off = 1
-            if 0 <= mouse[0] <= 200 and 0 <= mouse[1] <= 200:
-                resposta.append(0)
-                green_sound.play()
-            elif 200 <= mouse[0] <= 400 and 0 <= mouse[1] <= 200:
-                resposta.append(1)
-                red_sound.play()
-            elif 0 <= mouse[0] <= 200 and 200 <= mouse[1] <= 400:
-                resposta.append(2)
-                yellow_sound.play()
-            elif 200 <= mouse[0] <= 400 and 200 <= mouse[1] <= 400:
-                resposta.append(3)
-                blue_sound.play()
+    if jogador_esperando_resposta[jogador_atual] and click[0] == 1 and click_on_off == 0:  # Apenas quando o clique é válido
+        click_on_off = 1
+        if 100 <= mouse[0] <= 300 and 100 <= mouse[1] <= 300:
+            resposta.append(0)
+            green_sound.play()
+        elif 300 <= mouse[0] <= 500 and 100 <= mouse[1] <= 300:
+            resposta.append(1)
+            red_sound.play()
+        elif 100 <= mouse[0] <= 300 and 300 <= mouse[1] <= 500:
+            resposta.append(2)
+            yellow_sound.play()
+        elif 300 <= mouse[0] <= 500 and 300 <= mouse[1] <= 500:
+            resposta.append(3)
+            blue_sound.play()
 
     if click[0] == 0:
         click_on_off = 0
