@@ -4,6 +4,7 @@ import time
 from tkinter import Tk, Button
 import json
 import os
+import subprocess
 import tkinter as tk
 import tkinter.simpledialog
 
@@ -122,7 +123,7 @@ azul_escuro = (0, 0, 255)
 # Setup da tela do Jogo
 window = pygame.display.set_mode((600, 600))
 window.fill(branco)
-pygame.display.set_caption("Brilliant Disse!")
+pygame.display.set_caption("Brilliant Mellody!")
 
 # Inicializando fonte
 pygame.font.init()
@@ -134,6 +135,8 @@ click_on_off = 0
 sequencia_do_jogo = []
 repeticao_das_cores = 0
 resposta = []
+
+
 
 def inicio(window):
     pygame.draw.rect(window, verde_escuro, (100, 100, 200, 200))
@@ -147,7 +150,15 @@ def inicio(window):
     pygame.draw.circle(window, preto, (300, 300), 210, 10)
     texto = fonte.render("Brilliant", 1, branco)
     window.blit(texto, (260, 275))
+    button_x = 600 // 2 - 100 // 2
+    button_y = 500  # Posição vertical inferior
+    
+    pygame.draw.rect(window, branco, (0, 0, 500, 50))
+    texto = fonte.render(str(len(sequencia_do_jogo)), 1, preto)
+    window.blit(texto, (10, 10))
+    
     pygame.display.update()
+
 
 def b_verde(window):
     pygame.draw.rect(window, verde, (100, 100, 200, 200))
@@ -220,6 +231,28 @@ def b_centro(window):
     window.blit(texto, (260, 275))
     pygame.display.update()
 
+def redirecionar_para_menu():
+    print("Redirecionando para o menu...")
+    # Fechar a janela atual do pygame
+    pygame.quit()
+    # Executar o menu.py
+    os.system("python menu.py")  # Alternativa: subprocess.run(["python", "menu.py"])
+    quit()
+
+# Adicionar a lógica do botão "Voltar ao Menu"
+def draw_back_button():
+    back_text = "Voltar ao Menu"
+    button_x = 600 // 2 - 100 // 2
+    button_y = 500  # Posição vertical inferior
+    pygame.draw.rect(window, cinza, (button_x, button_y, 100, 50))  # Caixa do botão
+    text_surface = fonte.render(back_text, True, branco)
+    window.blit(
+        text_surface,
+        (button_x + (100 - text_surface.get_width()) // 2,
+         button_y + (50 - text_surface.get_height()) // 2),
+    )
+    return button_x, button_y, 100, 50
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -231,6 +264,8 @@ while True:
 
     # Declarando click do mouse
     click = pygame.mouse.get_pressed()
+
+    
 
     # Lógica de repetição das cores
     if repeticao_das_cores == 1:
@@ -273,7 +308,8 @@ while True:
      finalizar_jogo(score)  # Chama a função finalizar_jogo
      sequencia_do_jogo = []
      resposta = []
- 
+    
+    
 
     # Verde
     if (mouse[0] - 300) ** 2 + (mouse[1] - 300) ** 2 <= 40000 and \
@@ -319,14 +355,31 @@ while True:
             repeticao_das_cores = 1
             sequencia_do_jogo.append(randrange(4))
             resposta = []
+    elif click[0] == 1:
+            # Desenhar o botão "Voltar ao Menu"
+            redirecionar_para_menu()
+
+    
+
+            
     else:
         inicio(window)
 
-    pygame.draw.rect(window, branco, (0, 0, 500, 50))
-    texto = fonte.render(str(len(sequencia_do_jogo)), 1, preto)
-    window.blit(texto, (10, 10))
+   
+
+    
 
     click_on_off = click[0]
+    
+
+   
+
+    
+    
+    
+
+
+
 
     pygame.display.update()
 
